@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quest Across the Kingdom</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #f5f0e8; font-family: Georgia, serif; min-height: 100vh; }
+.app { max-width: 480px; margin: 0 auto; padding: 0 0 3rem; }
+.app-header { text-align: center; padding: 2rem 1.5rem 1.5rem; border-bottom: 1px solid #d4c9b0; margin-bottom: 1rem; }
+.app-title { font-size: 26px; font-weight: normal; color: #2c1a0e; margin-bottom: 4px; }
+.app-sub { font-size: 13px; color: #7a6040; margin-bottom: 1.25rem; font-style: italic; font-family: sans-serif; }
+.prog-wrap { background: #ddd5c0; border-radius: 99px; height: 8px; overflow: hidden; }
+.prog-fill { height: 8px; border-radius: 99px; background: #2d7a4f; transition: width 0.4s ease; }
+.prog-label { font-size: 12px; color: #7a6040; margin-top: 6px; font-family: sans-serif; }
+.list { padding: 0 1rem; }
+.card { background: #fffdf7; border: 1px solid #d4c9b0; border-radius: 12px; margin-bottom: 10px; overflow: hidden; transition: border-color 0.2s; }
+.card.solved { border-color: #2d7a4f; background: #eef7f0; }
+.card-num { font-size: 11px; color: #7a6040; font-family: sans-serif; padding: 12px 14px 0; letter-spacing: 0.04em; text-transform: uppercase; }
+.riddle { font-size: 14px; color: #4a3318; line-height: 1.75; font-style: italic; padding: 8px 14px 10px; border-left: 3px solid #8B5E1A; margin: 8px 14px 12px; background: #f5efe0; border-radius: 0 8px 8px 0; }
+.card.solved .riddle { background: #d4edda; border-left-color: #2d7a4f; color: #1a4d30; }
+.answer-row { display: flex; gap: 8px; padding: 0 14px 12px; align-items: center; }
+.answer-input { flex: 1; padding: 8px 12px; border: 1px solid #c4b89a; border-radius: 8px; font-size: 14px; font-family: sans-serif; background: #fffdf7; color: #2c1a0e; outline: none; transition: border-color 0.15s; }
+.answer-input:focus { border-color: #8B5E1A; }
+.card.solved .answer-input { background: #d4edda; border-color: #2d7a4f; color: #1a4d30; }
+.check-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid #8B5E1A; background: #fffdf7; color: #8B5E1A; font-size: 13px; font-family: sans-serif; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+.check-btn:hover { background: #f5efe0; }
+.card.solved .check-btn { background: #2d7a4f; border-color: #1a4d30; color: #eef7f0; cursor: default; }
+.wrong-msg { font-size: 12px; color: #993C1D; font-family: sans-serif; padding: 0 14px 10px; display: none; }
+.wrong-msg.show { display: block; }
+.solved-badge { font-size: 12px; font-family: sans-serif; color: #1a4d30; padding: 0 14px 12px; display: none; }
+.card.solved .solved-badge { display: block; }
+.complete { display: none; margin: 1rem; background: #eef7f0; border: 1px solid #2d7a4f; border-radius: 12px; padding: 1.75rem; text-align: center; }
+.complete.show { display: block; }
+.complete p { font-size: 17px; color: #1a4d30; margin-bottom: 6px; }
+.complete small { font-size: 13px; color: #2d7a4f; font-family: sans-serif; }
+.reset-btn { display: block; width: calc(100% - 2rem); margin: 0.75rem 1rem 0; font-size: 12px; font-family: sans-serif; color: #7a6040; background: none; border: 1px solid #d4c9b0; border-radius: 8px; padding: 7px; cursor: pointer; }
+.reset-btn:hover { background: #f0e8d5; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="app-header">
+    <i class="ti ti-scroll" style="font-size:36px;color:#8B5E1A;display:block;margin-bottom:10px;" aria-hidden="true"></i>
+    <h1 class="app-title">Quest across the kingdom</h1>
+    <p class="app-sub">Solve each riddle. Type your answer. Collect all 12 stamps to claim your prize.</p>
+    <div class="prog-wrap"><div class="prog-fill" id="pbar" style="width:0%"></div></div>
+    <p class="prog-label" id="plabel">0 of 12 solved</p>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <div class="complete" id="complete">
+    <i class="ti ti-trophy" style="font-size:40px;color:#8B5E1A;display:block;margin-bottom:10px;" aria-hidden="true"></i>
+    <p>Quest complete, brave adventurer!</p>
+    <small>Show this screen to a volunteer to claim your prize!</small>
+  </div>
+
+  <button class="reset-btn" id="reset">reset quest</button>
+</div>
+
+<script>
+const stations = [
+  {
+    riddle: "Weary bones and an empty belly — this is where the wandering ends, at least for a meal. Smoke drifts, something simmers, and a warm plate awaits those who follow the smell.",
+    answers: ["the wanderer's rest","wanderer's rest","wanderers rest","the wanderers rest"]
+  },
+  {
+    riddle: "No swords here — something heavier flies through the air. Step up, take aim, and let it spin. If your arm is true, glory awaits. If not, try again.",
+    answers: ["ironhand arena","iron hand arena"]
+  },
+  {
+    riddle: "Two opponents face each other. One advances, one retreats. The lesson begins not with strength but with footwork. Find where blades are taught, not swung.",
+    answers: ["warriors training grounds","warrior training grounds","warriors training ground"]
+  },
+  {
+    riddle: "Something ancient lives here — between the tide and the tale. Neither fully of land nor sea, they wait to greet those bold enough to seek the water's edge.",
+    answers: ["mermaid's cove","mermaids cove","mermaid cove"]
+  },
+  {
+    riddle: "What you carry into this realm holds no weight here. Something must be surrendered, something new must be received. Only then will the doors of the kingdom truly open to you.",
+    answers: ["king's vault","kings vault"]
+  },
+  {
+    riddle: "Every great quest needs a moment of pause — and a carefully brewed reward. Descend if you dare. The recipe is secret. The effect is legendary.",
+    answers: ["potion cellar","the potion cellar"]
+  },
+  {
+    riddle: "Many desire it. Few will leave with it. No words are spoken, no hands are raised — only a number, written in silence, left behind like a whisper. May the most determined soul prevail.",
+    answers: ["the dragon's horde","dragon's horde","dragons horde","the dragons horde"]
+  },
+  {
+    riddle: "It should not be possible — and yet there it is, floating above the earth. The only way in is to leap. The only rule is laughter. Gravity disagrees with everything here.",
+    answers: ["castle in the sky","the castle in the sky"]
+  },
+  {
+    riddle: "Here, the mightiest weapon is a twenty-sided stone. Gather round, choose your character, and prepare — the dungeon does not wait for those who hesitate.",
+    answers: ["battle camp"]
+  },
+  {
+    riddle: "You are lost. You have no map. You have questions and no answers. There is one place in this entire kingdom where that problem gets solved — loudly, cheerfully, and without judgment.",
+    answers: ["town crier","the town crier"]
+  },
+  {
+    riddle: "She does not speak first. She waits. The future is already written somewhere — she simply knows where to look. Approach with an open mind, or do not approach at all.",
+    answers: ["the eye of the realm","eye of the realm"]
+  },
+  {
+    riddle: "Nothing is taken here. Everything is given. There is no keeper, no transaction, no receipt — only the quiet act of leaving something behind for a cause greater than yourself.",
+    answers: ["the offering stone","offering stone"]
+  }
+];
+
+let solved = new Set();
+function save() { try { localStorage.setItem('kq_solved', JSON.stringify([...solved])); } catch(e){} }
+function load() { try { const d = localStorage.getItem('kq_solved'); if(d) solved = new Set(JSON.parse(d)); } catch(e){} }
+
+function check(i) {
+  const inp = document.getElementById('inp' + i);
+  const msg = document.getElementById('msg' + i);
+  const val = inp.value.trim().toLowerCase();
+  if (stations[i].answers.includes(val)) {
+    solved.add(i); save(); render();
+  } else {
+    msg.className = 'wrong-msg show';
+    inp.style.borderColor = '#993C1D';
+    setTimeout(() => { msg.className = 'wrong-msg'; inp.style.borderColor = '#c4b89a'; }, 2200);
+  }
+}
+
+function render() {
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  stations.forEach((s, i) => {
+    const iS = solved.has(i);
+    const display = s.answers[0].replace(/\b\w/g, c => c.toUpperCase());
+    const div = document.createElement('div');
+    div.className = 'card' + (iS ? ' solved' : '');
+    div.innerHTML =
+      '<p class="card-num">Riddle ' + (i+1) + ' of ' + stations.length + '</p>' +
+      '<div class="riddle">' + s.riddle + '</div>' +
+      '<div class="answer-row">' +
+        '<input class="answer-input" id="inp' + i + '" type="text" placeholder="Name this place..." value="' + (iS ? display : '') + '" ' + (iS ? 'readonly' : '') + ' />' +
+        '<button class="check-btn" onclick="check(' + i + ')" ' + (iS ? 'disabled' : '') + '>' +
+          (iS ? '<i class="ti ti-check" style="font-size:13px;vertical-align:-1px;"></i> correct' : 'submit') +
+        '</button>' +
+      '</div>' +
+      '<p class="wrong-msg" id="msg' + i + '">Not quite — keep searching, adventurer!</p>' +
+      '<p class="solved-badge"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-1px;margin-right:4px;" aria-hidden="true"></i>Stamp collected!</p>';
+    if (!iS) div.querySelector('input').addEventListener('keydown', e => { if(e.key==='Enter') check(i); });
+    list.appendChild(div);
+  });
+  const pct = Math.round((solved.size / stations.length) * 100);
+  document.getElementById('pbar').style.width = pct + '%';
+  document.getElementById('plabel').textContent = solved.size + ' of ' + stations.length + ' solved';
+  document.getElementById('complete').className = 'complete' + (solved.size === stations.length ? ' show' : '');
+}
+
+document.getElementById('reset').addEventListener('click', () => { solved.clear(); save(); render(); });
+load();
+render();
+</script>
+</body>
+</html>
